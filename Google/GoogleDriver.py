@@ -2,20 +2,28 @@
 
 from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
+from os import path
 
 class GoogleDriver:
 
     FOLDER_ID = '0B3YfnXuRdcz4SXIyaXc2Z0xNQUE'
 
     gauth = GoogleAuth()
-    gauth.LocalWebserverAuth()
+    gauth.LoadCredentialsFile('credentials.json')
 
-    drive = GoogleDrive(gauth)
+    if gauth.credentials is None:
+        gauth.LocalWebserverAuth()
+    elif gauth.access_token_expired:
+        gauth.Refresh()
+    else:
+        gauth.Authorize()
+
+    gauth.SaveCredentialsFile("credentials.json")
 
     def __init__(self):
-        pass
+        self.client = GoogleDrive(self.gauth)
 
-    def uploadFile(self, client, file_name):
-        file = client.CreateFile({"parents": [{"kind": "drive#fileLink", "id": self.FOLDER_ID}]})
+    def uploadFile(self, file_name):
+        file = self.client.CreateFile({"parents": [{"kind": "drive#fileLink", "id": self.FOLDER_ID}]})
         file.SetContentFile(file_name)
         file.Upload()

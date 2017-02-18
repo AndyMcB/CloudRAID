@@ -1,22 +1,22 @@
 # coding: utf-8
+from __future__ import print_function, unicode_literals
 import requests
 import Box.BoxExceptions as e
-from __future__ import print_function, unicode_literals
-
 
 class BoxOAuth2:
+
     CLIENT_ID = 'y0vwgy93gan8sdalfr39vjblmvyb32xw'  # Insert Box client ID here
     CLIENT_SECRET = 'WPIqt4wCxKykaq1ENozbpXElhqaMDPup'  # Insert Box client secret here
 
-    def _oauth2_token_request(self, client_id, client_secret, grant_type, token, **kwargs):
+    def oauth2_token_request(self, token, **kwargs):
 
         """
         Performs an oauth2 request against Box
         """
         args = {
-            'client_id': client_id,
-            'client_secret': client_secret,
-            'grant_type': grant_type,
+            'client_id': self.CLIENT_ID,
+            'client_secret': self.CLIENT_SECRET,
+            'grant_type': 'refresh_token',
             'refresh_token': token
         }
 
@@ -29,6 +29,7 @@ class BoxOAuth2:
         response = requests.Session().send(prepReq)                 #requests.post(url, args, headers=headers)
 
         return self._handle_auth_response(response)
+
 
     def _handle_auth_response(self, response):
         result = response.json()

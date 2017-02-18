@@ -4,17 +4,20 @@ import Google.GoogleDriver as Google
 import Dropbox.DropboxDriver as Dropbox
 
 # ToDo - comment code
+##TODO - Deal with app looking for files from where main file was called
 class CloudRAID:
 
     dbx = Dropbox.DropboxDriver()
     google = Google.GoogleDriver()
     box = Box.BoxDriver()
 
+    def __init__(self):
+        pass
 
-    def upload(self, file):
-        self.dbx.uploadFile()
-        self.google.uploadFile()
-        self.box.upload()
+    def upload(self, file_path):
+        self.dbx.uploadFile(file_path)
+        self.google.uploadFile(file_path)
+        self.box.uploadFile(file_path)
         pass
 
 
