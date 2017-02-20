@@ -59,14 +59,14 @@ class RAID5Controller(RAIDController):
     def read_all_files(self):
         ret_bits = []
         ret_files = []
-        for i in range(len(self)):
+        for i in range(len(self)): #len(self) = len of disk[0]
             for j in range(self.num_disks):
                 parity_disk = self.calculate_parity_disk(i)
                 if j != parity_disk:
-                    ret_bits.append(self.disks[j].read(i))
-            for k in range(len(self.files)):
+                    ret_bits.append(self.disks[j].read(i)) # take all bits from non-parity disks
+            for k in range(len(self.files)): #len(self.files) = len of file list
                 if i == self.files[k].start_addr - 1:
-                    ret_bits = ret_bits[:len(ret_bits) - self.files[k - 1].padding]
+                    ret_bits = ret_bits[:len(ret_bits) - self.files[k - 1].padding] # ret_bits = length of ret_bits - padding
                     ret_files.append(RAIDFile.from_bits(k - 1, ret_bits))
                     ret_bits = []
 
@@ -97,7 +97,7 @@ class RAID5Controller(RAIDController):
         self.validate_disks()
 
     def calculate_parity_disk(self, index):
-        return self.num_disks - ((index % self.num_disks) + 1)
+        return self.num_disks - ((index % self.num_disks) + 1) # get chosen disk by geting the index mod the number of disks, add one to prevent it choosing a disk 0
 
     def print_data(self):
         for x in self.disks:
@@ -128,7 +128,7 @@ class RAID5Controller(RAIDController):
     @staticmethod
     def calculate_parity(block):
         calculated_parity = None
-        for x in block:
+        for x in block: # calc parity = XOR c_p and int x, base 2 else c_p = int x, base 2
             calculated_parity = calculated_parity ^ int(x, 2) if calculated_parity is not None else int(x, 2)
         return calculated_parity
 
