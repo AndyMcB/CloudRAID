@@ -20,14 +20,6 @@ samples/RAID5-Sim/demo.sh
 samples/RAID5-Sim/Disk.py
 samples/RAID5-Sim/LICENSE
 samples/RAID5-Sim/main.py
-samples/RAID5-Sim/RAIDClasses/RAID0Controller.py
-samples/RAID5-Sim/RAIDClasses/RAID1Controller.py
-samples/RAID5-Sim/RAIDClasses/RAID2Controller.py
-samples/RAID5-Sim/RAIDClasses/RAID3Controller.py
-samples/RAID5-Sim/RAIDClasses/RAID4Controller.py
-samples/RAID5-Sim/RAIDClasses/RAID5Controller.py
-samples/RAID5-Sim/RAIDClasses/RAID6Controller.py
-samples/RAID5-Sim/RAIDClasses/RAIDController.py
 samples/RAID5-Sim/RAIDExceptions.py
 samples/RAID5-Sim/RAIDFile.py
 samples/RAID5-Sim/README.md
