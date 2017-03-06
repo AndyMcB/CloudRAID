@@ -3,8 +3,10 @@ import requests
 from json import dump, load
 import dropbox
 from os import path
+from raid.RAIDStorage import RAIDStorage
+from decimal import Decimal,getcontext
 
-class DropboxDriver:
+class DropboxDriver(RAIDStorage):
 
     auth_token = 'BNwX0RfADiAAAAAAAAAACTQkLma2JEPQSZc1zO0jN9c8RZl5fKLiY28xKQ10zzj2'
     app_key = 'fvwzhyjpgnsftzr'
@@ -20,7 +22,6 @@ class DropboxDriver:
             self.access_token, uid = self.get_access_token()
             self.store_tokens(self.access_token)
             self.client = dropbox.Dropbox(self.access_token)  # Dropbox Client Object
-        self.uploadFile('test.txt')
 
 
     def uploadFile(self, file_path):
@@ -51,4 +52,13 @@ class DropboxDriver:
         with open('dropbox_tokens.json', 'r') as store:
             tokens = load(store)
         access =  tokens['access_token']
-        return access[0]
+        return access
+
+    def remaining_storage(self):
+        info = self.client.users_get_space_usage()
+        total_bytes = info.allocation.get_individual().allocated
+        used_bytes = info.used
+        remaining_bytes = total_bytes - used_bytes
+        getcontext().prec = 3
+        gb_val = Decimal(remaining_bytes) / Decimal(1073741824)
+        return gb_val

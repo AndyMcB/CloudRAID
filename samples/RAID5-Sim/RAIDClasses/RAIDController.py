@@ -24,7 +24,7 @@ class RAIDController(metaclass=ABCMeta):
             self.disks.append(Disk(i, disk_cap))
 
     def __len__(self):
-        return len(self.disks[0])
+        return len(self.disks[0]) # length of data array in disk 0
 
     def get_stripe(self, index):
         # Returns a stripe of data from the disk array.
@@ -41,12 +41,12 @@ class RAIDController(metaclass=ABCMeta):
         if len(self.files) == 0:
             file.start_addr = 0
         else:
-            file.start_addr = len(self)
+            file.start_addr = len(self) # go to len of self as that is the amount of data that has been striped over that disk and approximatly that of every disk
 
         self.files.append(file)
-        blocks = list(split_data(file.data_B, len(self.disks) - 1)) # split it into size of disks -1
-        file.padding = (len(self.disks) - 1) - len(blocks[-1]) # calculate padding ##TODO-how is this done?
-        self.write_bits(file.data_B + [format(0, bin_format)] * file.padding) # write the binary data + the necessary 0 padding
+        blocks = list(split_data(file.binary_data, len(self.disks) - 1)) # split it into size of disks -1 for the parity drive
+        file.padding = (len(self.disks) - 1) - len(blocks[-1]) # calculate padding with
+        self.write_bits(file.binary_data + [format(0, bin_format)] * file.padding) # write the binary data + the necessary 0 padding
 
 
     # Validates the correctness of the parity for each stripe. If an original disk array is passed in, the Disk objects

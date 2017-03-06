@@ -2,13 +2,18 @@ import requests
 from json import dump, load
 from boxsdk import Client
 from boxsdk import OAuth2
+from decimal import Decimal,getcontext
+
 from Box.BoxOAuth2 import *
 from boxsdk.network.default_network import DefaultNetwork
 from pprint import pformat
 from os import path
 from urllib.parse import urlparse, parse_qs
+from raid.RAIDStorage import RAIDStorage
 
-class BoxDriver:
+
+
+class BoxDriver(RAIDStorage):
 
     # ToDo - factor out info into config file
     CLIENT_ID = 'y0vwgy93gan8sdalfr39vjblmvyb32xw'
@@ -16,14 +21,9 @@ class BoxDriver:
     FOLDER_ID = '18839913719'  # ID of FYP folder in Box
 
     def __init__(self):
-
-        oauth2 = OAuth2(self.CLIENT_ID, self.CLIENT_SECRET, store_tokens=self.store_tokens)
-
         self.access_token, self.refresh_token = self.retrieve_tokens()
-
         oauth2 = OAuth2(self.CLIENT_ID, self.CLIENT_SECRET, access_token= self.access_token, refresh_token= self.refresh_token, store_tokens=self.store_tokens)
-
-        self.client = Client(oauth2, LoggingNetwork())  # Create the SDK client
+        self.client = Client(oauth2)  # Create the SDK client
         self.user_info(self.client)
 
     def get_auth_code(self, oauth2):
@@ -43,7 +43,6 @@ class BoxDriver:
         with open('box_tokens.json', 'w', encoding='utf-8') as store:
             dump(data, store, ensure_ascii=False)
 
-    # ToDo - add check for tokens being out of date
     def update_tokens(self):
         grant_type = 'refresh_token'
         box = BoxOAuth2()
@@ -67,6 +66,16 @@ class BoxDriver:
     def uploadFile(self, file_path):
         file_name = path.basename(file_path)
         self.client.folder(self.FOLDER_ID).upload(file_path, file_name, preflight_check=True)
+
+    def remaining_storage(self):
+        info = self.client.user(user_id='me').get()
+        total_bytes = info.space_amount
+        used_bytes = info.space_used
+        storage_remaining = total_bytes - used_bytes
+        getcontext().prec = 3
+        gb_val = Decimal(storage_remaining) / Decimal(1073741824)
+        return gb_val
+
 
 
 

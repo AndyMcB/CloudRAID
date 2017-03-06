@@ -2,9 +2,11 @@
 
 from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
-from os import path
+from raid.RAIDStorage import RAIDStorage
+import pprint
+from decimal import Decimal,getcontext
 
-class GoogleDriver:
+class GoogleDriver(RAIDStorage):
 
     FOLDER_ID = '0B3YfnXuRdcz4SXIyaXc2Z0xNQUE'
 
@@ -27,3 +29,12 @@ class GoogleDriver:
         file = self.client.CreateFile({"parents": [{"kind": "drive#fileLink", "id": self.FOLDER_ID}]})
         file.SetContentFile(file_name)
         file.Upload()
+
+    def remaining_storage(self):
+        info = self.client.GetAbout()
+        total_bytes = int(info['quotaBytesTotal'])
+        used_bytes = int(info['quotaBytesUsed'])
+        remaining_bytes = total_bytes - used_bytes
+        getcontext().prec = 3
+        gb_val = Decimal(remaining_bytes) / Decimal(1073741824)
+        return gb_val
