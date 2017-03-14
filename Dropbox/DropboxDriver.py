@@ -1,4 +1,6 @@
 # Include the Dropbox SDK
+import os
+
 import requests
 from json import dump, load
 import dropbox
@@ -18,17 +20,33 @@ class DropboxDriver(RAIDStorage):
         try:
             self.access_token = self.retrieve_tokens()
             self.client = dropbox.Dropbox(self.access_token)  # Dropbox Client Object
+            self.index = None
         except:
             self.access_token, uid = self.get_access_token()
             self.store_tokens(self.access_token)
             self.client = dropbox.Dropbox(self.access_token)  # Dropbox Client Object
+            self.index = None
 
 
-    def uploadFile(self, file_path):
+    def upload_file(self, file_path):
         with open(file_path, 'rb') as f:
             file_name = path.basename(file_path)
-            filePath = "/FYP/{0}".format(file_name)
-            self.client.files_upload(f.read(), filePath, mute=True)
+            file_path = "/FYP/{0}".format(file_name)
+            self.client.files_upload(f.read(), file_path, mute=True)
+
+
+    def get_data(self, file_name):
+        name, extention = os.path.splitext(file_name)
+        file_name = name + self.index + extention
+
+        file_path = "/FYP/{0}".format(file_name)
+        print(file_path)
+        file, response = self.client.files_download(file_path)
+
+        data = response.content.decode('utf-8').replace('\r\n', '')
+        data = [data[i:i + 10] for i in range(0, len(data), 10)]
+        return [file.name, data]
+
 
 
     def get_access_token(self):

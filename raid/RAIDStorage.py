@@ -9,7 +9,7 @@ class RAIDStorage:
         self.data = []
         print(storage_id, capacity)
 
-    def __repr__(self):
+    def __repr__(self): ##ToDo - fix descriptor
         return repr(self.storage_id) + ":" + repr(self.data)
 
     def __len__(self):
@@ -34,7 +34,7 @@ class RAIDStorage:
     def read(self, index): #ToDo - add error handling to inheriting class
         return
         # if index >= len(self.data):
-        #     raise Exception("Cannot read index '" + repr(index) + "' on storage '" + repr(self.storage_id) +"': Index out of bounds")
+        #     raise Exception("Cannot read index '" + repr(index) + "' on storage_driver '" + repr(self.storage_id) +"': Index out of bounds")
         # return self.data[index]
 
     @abstractmethod

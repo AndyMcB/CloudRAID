@@ -14,6 +14,8 @@ class RAIDFile:
         self.data_S = data  # String to convert
         self.binary_data = self.convert_data(data)  # Binary version of string
         self.file_name = file_name
+        with open('file_record.txt', 'a') as records: #ToDo - expand record keeping detail
+            records.write('\n' + file_name)
 
     def __len__(self):
         return len(self.binary_data)

@@ -1,3 +1,5 @@
+import os
+
 import requests
 from json import dump, load
 from boxsdk import Client
@@ -24,7 +26,8 @@ class BoxDriver(RAIDStorage):
         self.access_token, self.refresh_token = self.retrieve_tokens()
         oauth2 = OAuth2(self.CLIENT_ID, self.CLIENT_SECRET, access_token= self.access_token, refresh_token= self.refresh_token, store_tokens=self.store_tokens)
         self.client = Client(oauth2)  # Create the SDK client
-        self.user_info(self.client)
+        self.index = None
+        #self.user_info(self.client)
 
     def get_auth_code(self, oauth2):
         auth_url, csrf_token = oauth2.get_authorization_url('http://localhost:8000')
@@ -63,9 +66,28 @@ class BoxDriver(RAIDStorage):
         print('Box User:', current_user.name)
 
     # Upload a file to Box!
-    def uploadFile(self, file_path):
+    def upload_file(self, file_path):
         file_name = path.basename(file_path)
         self.client.folder(self.FOLDER_ID).upload(file_path, file_name, preflight_check=True)
+
+    def get_data(self,file_name):
+        name, extention = os.path.splitext(file_name)
+        file_name = name + self.index + extention
+
+        search_results = self.client.search(
+            file_name,
+            limit=2,
+            offset=0,
+            ancestor_folders=[self.client.folder(folder_id=self.FOLDER_ID)]
+            #file_extensions=['txt'],
+        )
+        for item in search_results:
+            item_with_name = item.get(fields=['name'])
+            print('matching item: ' + item_with_name.id + '-' + item_with_name.name + '\n' )
+
+        data = item_with_name.content().decode('utf-8').replace('\r\n', '')
+        data = [data[i:i + 10] for i in range(0, len(data), 10)]
+        return [item_with_name.name, data]
 
     def remaining_storage(self):
         info = self.client.user(user_id='me').get()
@@ -75,7 +97,6 @@ class BoxDriver(RAIDStorage):
         getcontext().prec = 3
         gb_val = Decimal(storage_remaining) / Decimal(1073741824)
         return gb_val
-
 
 
 
