@@ -31,32 +31,34 @@ class CloudRAID:
             else:
                 self.drivers[i].index = '_{0}'.format(i)
 
-    def write(self, block, p_drive):
+    def write(self, block, p_drive, file_name):
 
         if len(self.drivers) != len(block): raise Exception('Num blocks does not match num disks')
+        f_name, ext = os.path.splitext(file_name)
 
         for i in range(len(block)):
             if i == p_drive:
-                name = 'data_p.csv'
+                name = f_name+'_p.csv'
                 with open(name, 'a', newline='') as csv:
                     writer = _csv.writer(csv, delimiter=',')
                     b =  block[i]
                     writer.writerow([b])
             else:
-                name = 'data_' + str(i) + '.csv'
+                name = f_name + '_' +str(i) + '.csv'
                 with open(name, 'a', newline='') as csv:
                     writer = _csv.writer(csv, delimiter=',')
                     b = block[i]
                     writer.writerow([b])
 
 
-    def upload_blocks(self): ##ToDo - dehardcode #ToDo - Dynamically get names
-        self.dbx.upload_file('data_0.csv')
-        self.google.upload_file('data_1.csv')
-        self.box.upload_file('data_p.csv')
-        os.remove('data_0.csv')
-        os.remove('data_1.csv')
-        os.remove('data_p.csv')
+    def upload_blocks(self, file_name):
+        f_name, ext = os.path.splitext(file_name)
+        self.dbx.upload_file(f_name + '_0.csv')
+        self.google.upload_file(f_name + '_1.csv')
+        self.box.upload_file(f_name + '_p.csv')
+        os.remove(f_name + '_0.csv')
+        os.remove(f_name +  '_1.csv')
+        os.remove(f_name +  '_p.csv')
 
 
     def read(self):
@@ -64,9 +66,9 @@ class CloudRAID:
 
 
     def download_blocks(self, file_name):
-        d1 = self.google.get_data(file_name)
-        d2 = self.dbx.get_data(file_name)
-        d3 = self.box.get_data(file_name)
+        d1 = self.google.get_data(file_name+'.csv')
+        d2 = self.dbx.get_data(file_name+'.csv')
+        d3 = self.box.get_data(file_name+'.csv')
 
         return [d1, d2, d3]
 

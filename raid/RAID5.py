@@ -29,7 +29,7 @@ class RAID5:
         self.storage_driver.index_drives(p_drive)
 
 
-    def write_file(self, file):  # create internal representation of file and send bit too write
+    def write_file(self, file, file_name):  # create internal representation of file and send bit too write
         if len(self.files) == 0:
             file.start_addr = 0
         else:
@@ -42,10 +42,10 @@ class RAID5:
         blocks = list(RAID5.split_data(file.binary_data, len(self.storage_driver) - 1))  # minus one drive to account for parity drive
         file.padding = (len(self.storage_driver) - 1) - len(blocks[-1])  # calculate padding with
 
-        self.write_bits(file.binary_data + [format(0, bin_format)] * file.padding)  # write the binary data + the necessary 0 padding
+        self.write_bits(file.binary_data + [format(0, bin_format)] * file.padding, file_name)  # write the binary data + the necessary 0 padding
 
 
-    def write_bits(self, data):  # get data and split into blocks, calculate parity bit, insert and write
+    def write_bits(self, data, file_name):  # get data and split into blocks, calculate parity bit, insert and write
 
         blocks = RAID5.split_data(data, len(self.storage_driver) - 1)  # minus one drive to account for parity drive
         bloc = []
@@ -63,10 +63,9 @@ class RAID5:
             b.insert(p_drive, format(parity_bit, bin_format))
 
             #Write block to disks
-            self.storage_driver.write(b, p_drive)
-            #print(self.storage_driver.count)
+            self.storage_driver.write(b, p_drive, file_name)
 
-        self.storage_driver.upload_blocks()
+        self.storage_driver.upload_blocks(file_name)
 
 
 
@@ -91,7 +90,7 @@ class RAID5:
         return ret_files
 
 
-    def rebuild_file_test(self, data):
+    def rebuild_file_test(self, data, file_name):
         ret_bits = []
         ret_files = []
 
@@ -104,12 +103,19 @@ class RAID5:
 
         data = [j for i in zip(bloc2, bloc1) for j in i]
 
-        l = []
-        for i in data:
-            l.append(chr(int(str(i), 2)))
+        contents = []
+        try:
+            for i in data:
+                contents.append(chr(int(str(i), 2)))
+        except ValueError:
+            print('Byte error found')
 
-        with open('rebuild.txt', 'w') as rebuild:
-            rebuild.write(''.join(l))
+        with open(file_name+'_rebuild.txt', 'w') as rebuild:
+            for char in contents:
+                try:
+                    rebuild.write(''.join(char))
+                except UnicodeEncodeError:
+                    print('Unicode error found')
 
 
         # for i in range(len(data[0][1])):  # len(self) = len of disk[0]

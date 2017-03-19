@@ -2,10 +2,9 @@ import os
 
 import requests
 from json import dump, load
-from boxsdk import Client
-from boxsdk import OAuth2
+from boxsdk import *
+from boxsdk import exception
 from decimal import Decimal,getcontext
-
 from Box.BoxOAuth2 import *
 from boxsdk.network.default_network import DefaultNetwork
 from pprint import pformat
@@ -67,7 +66,10 @@ class BoxDriver(RAIDStorage):
     # Upload a file to Box!
     def upload_file(self, file_path):
         file_name = path.basename(file_path)
-        self.client.folder(self.FOLDER_ID).upload(file_path, file_name, preflight_check=True)
+        try:
+            self.client.folder(self.FOLDER_ID).upload(file_path, file_name, preflight_check=True)
+        except exception.BoxAPIException:
+            print('Filename in use')
 
     def get_data(self,file_name):
         name, extention = os.path.splitext(file_name)

@@ -32,7 +32,11 @@ class DropboxDriver(RAIDStorage):
         with open(file_path, 'rb') as f:
             file_name = path.basename(file_path)
             file_path = "/FYP/{0}".format(file_name)
-            self.client.files_upload(f.read(), file_path, mute=True)
+            try:
+                self.client.files_upload(f.read(), file_path, mute=True)
+            except dropbox.exceptions.ApiError:
+                print('Name in use')
+
 
 
     def get_data(self, file_name):

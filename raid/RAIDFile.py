@@ -9,12 +9,12 @@ class RAIDFile:
     padding = 0
     file_name = ''
 
-    def __init__(self, file_id, file_name, data):#, conn):
+    def __init__(self, file_id, file_name, data, conn):
         self.start_addr = file_id
         self.data_S = data  # String to convert
         self.binary_data = self.convert_data(data)  # Binary version of string
         self.file_name = file_name
-        #self.db_add_file(conn, file_name)
+        self.db_add_file(conn, file_name)
 
     def __len__(self):
         return len(self.binary_data)
@@ -32,7 +32,7 @@ class RAIDFile:
 
     def db_add_file(self, conn, file_name):
         try:
-            conn.execute('INSERT INTO files VALUES (?)', (file_name,))
+            conn.execute('INSERT INTO files VALUES (?, ?)', (file_name, 'test'))
             conn.commit()
         except sqlite3.IntegrityError:
             print('Error: File already exists on record')

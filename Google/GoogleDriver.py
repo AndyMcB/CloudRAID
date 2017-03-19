@@ -41,6 +41,9 @@ class GoogleDriver(RAIDStorage):
 
 
         for file in file_list:
+            print(file['title'])
+            print(file_name)
+            print(file['title'] == file_name)
             if file['title'] == file_name:
                 data = file.GetContentString(mimetype='text/csv').replace('\r\n', '')
                 data = [data[i:i + 10] for i in range(0, len(data), 10)]
