@@ -17,7 +17,7 @@ samples/PyDrive/diff.txt
 samples/PyDrive/diff_gen.py
 samples/PyDrive/README.md
 samples/RAID5-Sim/demo.sh
-samples/RAID5-Sim/Disk.py
+samples/RAID5-Sim/drive.py
 samples/RAID5-Sim/LICENSE
 samples/RAID5-Sim/main.py
 samples/RAID5-Sim/RAIDExceptions.py
@@ -26,3 +26,6 @@ samples/RAID5-Sim/README.md
 test.py
 test.txt
 token_store.txt
+raid/__pycache__/RAID5.cpython-35.pyc
+raid/__pycache__/RAIDFile.cpython-35.pyc
+raid/__pycache__/RAIDStorage.cpython-35.pyc

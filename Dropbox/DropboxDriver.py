@@ -1,10 +1,14 @@
 # Include the Dropbox SDK
+import os
+
 import requests
 from json import dump, load
 import dropbox
 from os import path
+from raid.RAIDStorage import RAIDStorage
+from decimal import Decimal,getcontext
 
-class DropboxDriver:
+class DropboxDriver(RAIDStorage):
 
     auth_token = 'BNwX0RfADiAAAAAAAAAACTQkLma2JEPQSZc1zO0jN9c8RZl5fKLiY28xKQ10zzj2'
     app_key = 'fvwzhyjpgnsftzr'
@@ -16,18 +20,33 @@ class DropboxDriver:
         try:
             self.access_token = self.retrieve_tokens()
             self.client = dropbox.Dropbox(self.access_token)  # Dropbox Client Object
+            self.index = None
         except:
             self.access_token, uid = self.get_access_token()
             self.store_tokens(self.access_token)
             self.client = dropbox.Dropbox(self.access_token)  # Dropbox Client Object
-        self.uploadFile('test.txt')
+            self.index = None
 
 
-    def uploadFile(self, file_path):
+    def upload_file(self, file_path):
         with open(file_path, 'rb') as f:
             file_name = path.basename(file_path)
-            filePath = "/FYP/{0}".format(file_name)
-            self.client.files_upload(f.read(), filePath, mute=True)
+            file_path = "/FYP/{0}".format(file_name)
+            self.client.files_upload(f.read(), file_path, mute=True)
+
+
+    def get_data(self, file_name):
+        name, extention = os.path.splitext(file_name)
+        file_name = name + self.index + extention
+
+        file_path = "/FYP/{0}".format(file_name)
+        print(file_path)
+        file, response = self.client.files_download(file_path)
+
+        data = response.content.decode('utf-8').replace('\r\n', '')
+        data = [data[i:i + 10] for i in range(0, len(data), 10)]
+        return [file.name, data]
+
 
 
     def get_access_token(self):
@@ -51,4 +70,13 @@ class DropboxDriver:
         with open('dropbox_tokens.json', 'r') as store:
             tokens = load(store)
         access =  tokens['access_token']
-        return access[0]
+        return access
+
+    def remaining_storage(self):
+        info = self.client.users_get_space_usage()
+        total_bytes = info.allocation.get_individual().allocated
+        used_bytes = info.used
+        remaining_bytes = total_bytes - used_bytes
+        getcontext().prec = 3
+        gb_val = Decimal(remaining_bytes) / Decimal(1073741824)
+        return gb_val
