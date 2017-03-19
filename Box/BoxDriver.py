@@ -17,7 +17,6 @@ from raid.RAIDStorage import RAIDStorage
 
 class BoxDriver(RAIDStorage):
 
-    # ToDo - factor out info into config file
     CLIENT_ID = 'y0vwgy93gan8sdalfr39vjblmvyb32xw'
     CLIENT_SECRET = 'WPIqt4wCxKykaq1ENozbpXElhqaMDPup'
     FOLDER_ID = '18839913719'  # ID of FYP folder in Box
@@ -79,8 +78,10 @@ class BoxDriver(RAIDStorage):
             limit=2,
             offset=0,
             ancestor_folders=[self.client.folder(folder_id=self.FOLDER_ID)]
-            #file_extensions=['txt'],
         )
+
+        item_with_name = None
+        print(search_results)
         for item in search_results:
             item_with_name = item.get(fields=['name'])
             print('matching item: ' + item_with_name.id + '-' + item_with_name.name + '\n' )

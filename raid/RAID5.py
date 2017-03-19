@@ -70,7 +70,7 @@ class RAID5:
 
 
 
-    def rebuild_file(self, data):  # read bits from non parity drive and reconstruct #todo - implement requesting block ids from storage_driver
+    def rebuild_file(self, data):  # read bits from non parity drive and reconstruct
         ret_bits = []
         ret_files = []
 
@@ -126,7 +126,7 @@ class RAID5:
         #
         # ret_bits = ret_bits[:len(ret_bits) - self.files[-1].padding]
         # ret_files.append(
-        #     RAIDFile.from_bits(self.files[-1].id, 'test.txt', ret_bits))  # todo - figre out way to get file name
+        #     RAIDFile.from_bits(self.files[-1].id, 'test.txt', ret_bits))
         # return ret_files
 
 

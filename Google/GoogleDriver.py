@@ -46,6 +46,8 @@ class GoogleDriver(RAIDStorage):
                 data = [data[i:i + 10] for i in range(0, len(data), 10)]
                 return [file['title'], data]
 
+        raise Exception("No file found")
+
     def remaining_storage(self):
         info = self.client.GetAbout()
         total_bytes = int(info['quotaBytesTotal'])

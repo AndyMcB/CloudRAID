@@ -31,7 +31,7 @@ class CloudRAID:
             else:
                 self.drivers[i].index = '_{0}'.format(i)
 
-    def write(self, block, p_drive): ##ToDo- look into dedicated db for recored (posible to elastic searchize)
+    def write(self, block, p_drive):
 
         if len(self.drivers) != len(block): raise Exception('Num blocks does not match num disks')
 

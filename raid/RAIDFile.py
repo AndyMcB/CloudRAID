@@ -1,4 +1,4 @@
-
+import sqlite3
 
 bin_format = '#010b'
 
@@ -9,13 +9,12 @@ class RAIDFile:
     padding = 0
     file_name = ''
 
-    def __init__(self, file_id, file_name, data):
-        self.id = file_id  # Numbering variable for the blocks to know what order they are in
+    def __init__(self, file_id, file_name, data):#, conn):
+        self.start_addr = file_id
         self.data_S = data  # String to convert
         self.binary_data = self.convert_data(data)  # Binary version of string
         self.file_name = file_name
-        with open('file_record.txt', 'a') as records: #ToDo - expand record keeping detail
-            records.write('\n' + file_name)
+        #self.db_add_file(conn, file_name)
 
     def __len__(self):
         return len(self.binary_data)
@@ -30,6 +29,17 @@ class RAIDFile:
 
     def __ne__(self, other):
         return not self.__eq__(other)
+
+    def db_add_file(self, conn, file_name):
+        try:
+            conn.execute('INSERT INTO files VALUES (?)', (file_name,))
+            conn.commit()
+        except sqlite3.IntegrityError:
+            print('Error: File already exists on record')
+
+    def db_remove_file(self, conn, file_name):
+        conn.execute('DELETE FROM files  WHERE name=?', (file_name,))
+        conn.commit()
 
     @staticmethod
     def convert_data(d):  # d = data string
@@ -46,3 +56,6 @@ class RAIDFile:
             ret_str += chr(int(x, 2))
         return RAIDFile(file_id, file_name, ret_str)
 
+    @staticmethod
+    def from_name(file_name):  # inverse of convert string
+        pass
