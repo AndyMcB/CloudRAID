@@ -1,8 +1,12 @@
 ##Main Driver File
-import Box.BoxDriver as Box
-import Google.GoogleDriver as Google
-import Dropbox.DropboxDriver as Dropbox
-import _csv, os
+import _csv
+import os
+
+import driver.Dropbox.DropboxDriver as Dropbox
+import driver.Google.GoogleDriver as Google
+
+import driver.Box.BoxDriver as Box
+
 
 ##ToDo - Add logging
 
@@ -66,11 +70,23 @@ class CloudRAID:
 
 
     def download_blocks(self, file_name):
-        d1 = self.google.get_data(file_name+'.csv')
-        d2 = self.dbx.get_data(file_name+'.csv')
-        d3 = self.box.get_data(file_name+'.csv')
+        d1, d2, d3 = None, None, None
 
-        return [d1, d2, d3]
+        try:
+            d1 = self.google.get_data(file_name+'.csv')
+            d2 = self.dbx.get_data(file_name+'.csv')
+            d3 = self.box.get_data(file_name+'.csv')
+
+            return [d1, d2, d3]
+
+        except FileNotFoundError:
+            ret = [type(d1), type(d2), type(d3)]
+            for x in ret:
+                if x is None:
+                    raise FileNotFoundError
+
+            ##ToDo - add retry queue
+
 
 
 
