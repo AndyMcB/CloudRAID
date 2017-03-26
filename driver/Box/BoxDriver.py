@@ -1,23 +1,22 @@
+import logging
 import os
-
-import requests
-from json import dump, load
-from boxsdk import Client
-from boxsdk import OAuth2
 from decimal import Decimal,getcontext
-
-from Box.BoxOAuth2 import *
-from boxsdk.network.default_network import DefaultNetwork
-from pprint import pformat
+from json import dump, load
 from os import path
+from pprint import pformat
 from urllib.parse import urlparse, parse_qs
+
+from boxsdk import *
+from boxsdk import exception
+from boxsdk.network.default_network import DefaultNetwork
+
+from driver.Box.BoxOAuth2 import *
 from raid.RAIDStorage import RAIDStorage
 
 
 
 class BoxDriver(RAIDStorage):
 
-    # ToDo - factor out info into config file
     CLIENT_ID = 'y0vwgy93gan8sdalfr39vjblmvyb32xw'
     CLIENT_SECRET = 'WPIqt4wCxKykaq1ENozbpXElhqaMDPup'
     FOLDER_ID = '18839913719'  # ID of FYP folder in Box
@@ -68,7 +67,11 @@ class BoxDriver(RAIDStorage):
     # Upload a file to Box!
     def upload_file(self, file_path):
         file_name = path.basename(file_path)
-        self.client.folder(self.FOLDER_ID).upload(file_path, file_name, preflight_check=True)
+        try:
+            self.client.folder(self.FOLDER_ID).upload(file_path, file_name, preflight_check=True)
+            logging.warning("File Uploaded to Box")
+        except exception.BoxAPIException:
+            logging.error('Box: Filename in use')
 
     def get_data(self,file_name):
         name, extention = os.path.splitext(file_name)
@@ -79,15 +82,21 @@ class BoxDriver(RAIDStorage):
             limit=2,
             offset=0,
             ancestor_folders=[self.client.folder(folder_id=self.FOLDER_ID)]
-            #file_extensions=['txt'],
         )
-        for item in search_results:
-            item_with_name = item.get(fields=['name'])
-            print('matching item: ' + item_with_name.id + '-' + item_with_name.name + '\n' )
 
-        data = item_with_name.content().decode('utf-8').replace('\r\n', '')
-        data = [data[i:i + 10] for i in range(0, len(data), 10)]
-        return [item_with_name.name, data]
+
+        for item in search_results:
+            if item.name == file_name:
+                item_with_name = item.get(fields=['name'])
+                print('matching item: ' + item_with_name.id + '-' + item_with_name.name + '\n' )
+                data = item_with_name.content().decode('utf-8').replace('\r\n', '')
+                data = [data[i:i + 10] for i in range(0, len(data), 10)]
+                return [item_with_name.name, data]
+
+        raise FileNotFoundError(
+            'File: ' + file_name + ' not found. If it was uploaded recently it may need to be indexed by Box')
+
+
 
     def remaining_storage(self):
         info = self.client.user(user_id='me').get()

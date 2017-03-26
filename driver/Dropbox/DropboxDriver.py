@@ -1,4 +1,5 @@
 # Include the Dropbox SDK
+import logging
 import os
 
 import requests
@@ -32,7 +33,12 @@ class DropboxDriver(RAIDStorage):
         with open(file_path, 'rb') as f:
             file_name = path.basename(file_path)
             file_path = "/FYP/{0}".format(file_name)
-            self.client.files_upload(f.read(), file_path, mute=True)
+            try:
+                self.client.files_upload(f.read(), file_path, mute=True)
+                logging.warning("File uploaded to Dropbox")
+            except dropbox.exceptions.ApiError:
+                logging.error('Dropbox: File already exists')
+
 
 
     def get_data(self, file_name):

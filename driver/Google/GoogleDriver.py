@@ -1,4 +1,5 @@
 # API: https://developers.google.com/resources/api-libraries/documentation/drive/v3/python/latest/index.html
+import logging
 import os
 
 from pydrive.auth import GoogleAuth
@@ -28,23 +29,42 @@ class GoogleDriver(RAIDStorage):
         self.index = None
 
     def upload_file(self, file_name):
-        file = self.client.CreateFile({"parents": [{"kind": "drive#fileLink", "id": self.FOLDER_ID}]})
-        file.SetContentFile(file_name)
-        file.Upload()
+        file_list = self.client.ListFile({'q': "'0B3YfnXuRdcz4SXIyaXc2Z0xNQUE' in parents and trashed=false"}).GetList()
+        matches = [i for i in file_list if i['title'] == file_name]
 
-    def get_data(self, file_name): #ToDo - Add error handling
+        if not matches:
+            file = self.client.CreateFile({"parents": [{"kind": "drive#fileLink", "id": self.FOLDER_ID}]})
+            file.SetContentFile(file_name)
+            file.Upload()
+            logging.warning("File Uploaded to Google")
+        else:
+            logging.error('Google: File already exists')
 
+    def get_data(self, file_name):
         name, extention = os.path.splitext(file_name)
         file_name = name + self.index + extention
-
         file_list = self.client.ListFile({'q': "'0B3YfnXuRdcz4SXIyaXc2Z0xNQUE' in parents and trashed=false"}).GetList()
 
+        matches = [i for i in file_list if i['title'] == file_name ]
 
-        for file in file_list:
-            if file['title'] == file_name:
-                data = file.GetContentString(mimetype='text/csv').replace('\r\n', '')
-                data = [data[i:i + 10] for i in range(0, len(data), 10)]
-                return [file['title'], data]
+        if not matches:
+            raise Exception("No file found")
+        else:
+            file = matches[0]
+            data = file.GetContentString(mimetype='text/csv').replace('\r\n', '')
+            data = [data[i:i + 10] for i in range(0, len(data), 10)]
+            return [file['title'], data]
+
+
+        return matches[0]
+
+        #  for file in file_list:
+        #     if file['title'] == file_name:
+        #         data = file.GetContentString(mimetype='text/csv').replace('\r\n', '')
+        #         data = [data[i:i + 10] for i in range(0, len(data), 10)]
+        #         return [file['title'], data]
+
+
 
     def remaining_storage(self):
         info = self.client.GetAbout()
@@ -54,3 +74,4 @@ class GoogleDriver(RAIDStorage):
         getcontext().prec = 3
         gb_val = Decimal(remaining_bytes) / Decimal(1073741824)
         return gb_val
+

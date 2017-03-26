@@ -24,19 +24,5 @@ class RAIDStorage:
         return not self.__eq__(other)
 
     @abstractmethod
-    def write(self, data): #ToDo - add error handing to inheriting classes
-        return
-        # if (self.capacity > 0) and (len(self.data) + len(data) > self.capacity):
-        #     raise Exception('Placeholder')#storageFullException(self.storage_id)
-        # self.data.append(data)
-
-    @abstractmethod
-    def read(self, index): #ToDo - add error handling to inheriting class
-        return
-        # if index >= len(self.data):
-        #     raise Exception("Cannot read index '" + repr(index) + "' on storage_driver '" + repr(self.storage_id) +"': Index out of bounds")
-        # return self.data[index]
-
-    @abstractmethod
     def remaining_storage(self):
         return
