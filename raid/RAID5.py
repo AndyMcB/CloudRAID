@@ -56,6 +56,9 @@ class RAID5:
         bloc = []
 
         logging.warning(" calculating parity and generating bit load")
+        cur_milli_time = lambda: int(round(time.time() * 1000))
+        start_time = cur_milli_time()
+
         thread = Thread(target=self.spinner, )
         self.spin = True
         thread.start()
@@ -77,6 +80,9 @@ class RAID5:
         logging.warning(' uploading blocks to storage')
         print(file_name)
         self.storage_driver.upload_blocks(file_name)
+
+        end_time = cur_milli_time()
+        logging.warning("File processed and uploaded in {} seconds".format(end_time - start_time) )
 
     def spinner(self):
         spinner = itertools.cycle(['-', '/', '|', '\\'])
