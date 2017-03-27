@@ -94,7 +94,7 @@ class RAID5:
             time.sleep(0.1)
             sys.stdout.write('\r')
 
-    def rebuild_txt_file_test(self, data, file_name):
+    def rebuild_txt_file(self, data, file_name):
 
         for name, bytes in data:  # ToDo - improve extensibility
             if '_p' not in name:
@@ -112,14 +112,14 @@ class RAID5:
         except ValueError:
             logging.error('Byte error found')
 
-        with open(file_name + '_rebuild.txt', 'w') as rebuild:
+        with open('downloads/'+file_name + '_rebuild.txt', 'w') as rebuild:
             for char in contents:
                 try:
                     rebuild.write(''.join(char))
                 except UnicodeEncodeError:
                     logging.error('Unicode error found')
 
-    def rebuild_img_file_test(self, data, file_name):
+    def rebuild_img_file(self, data, file_name):
 
         for name, bytes in data:  # ToDo - improve extensibility
             if '_p' not in name:
@@ -132,7 +132,7 @@ class RAID5:
         file = self.from_bits(1, file_name, data)
 
         file_name = file_name + '_rebuild.jpg'
-        with open(file_name, 'wb') as f: #ToDo - fix hardcoded name
+        with open('downloads/'+file_name, 'wb') as f: #ToDo - fix hardcoded name
             d = base64.b64decode(file.data)
             f.write(d)
 
@@ -161,7 +161,7 @@ class RAID5:
         except ValueError:
             logging.error('Byte error found')
 
-        with open(file_name + '_rebuild.txt', 'w') as rebuild:
+        with open('downloads/'+file_name + '_rebuild.txt', 'w') as rebuild:
             for char in contents:
                 try:
                     rebuild.write(''.join(char))
@@ -192,7 +192,7 @@ class RAID5:
 
         file_name = file_name + '_rebuild.jpg'
         file = self.from_bits(1, file_name, data)
-        with open(file_name, 'wb') as f:  # ToDo - fix hardcoded name
+        with open('downloads/'+file_name, 'wb') as f:  # ToDo - fix hardcoded name
             d = base64.b64decode(file.data)
             f.write(d)
 
