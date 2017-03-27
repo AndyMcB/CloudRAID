@@ -22,11 +22,13 @@ class DropboxDriver(RAIDStorage):
             self.access_token = self.retrieve_tokens()
             self.client = dropbox.Dropbox(self.access_token)  # Dropbox Client Object
             self.index = None
+            self.connected = self.check_connection()
         except:
             self.access_token, uid = self.get_access_token()
             self.store_tokens(self.access_token)
             self.client = dropbox.Dropbox(self.access_token)  # Dropbox Client Object
             self.index = None
+
 
 
     def upload_file(self, file_path):
@@ -86,3 +88,12 @@ class DropboxDriver(RAIDStorage):
         getcontext().prec = 3
         gb_val = Decimal(remaining_bytes) / Decimal(1073741824)
         return gb_val
+
+
+    def check_connection(self):
+        try:
+            self.client.users_get_current_account()  # test for connection ToDo improve
+            return True
+        except requests.exceptions.ConnectionError:
+            logging.critical("Connection could not be made to Dropbox")
+            return False

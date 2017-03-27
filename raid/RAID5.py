@@ -53,7 +53,7 @@ class RAID5:
     def write_bits(self, data, file_name):  # get data and split into blocks, calculate parity bit, insert and write
 
         blocks = RAID5.split_data(data, len(self.storage_driver) - 1)  # minus one drive to account for parity drive
-        bloc = []
+
 
         logging.warning(" calculating parity and generating bit load")
         cur_milli_time = lambda: int(round(time.time() * 1000))
@@ -63,26 +63,28 @@ class RAID5:
         self.spin = True
         thread.start()
         for b in blocks:
-            bloc.append(b)
             # Calculate parity bit for block b & validate
-
             parity_bit = self.calculate_xor(b)
             b.append(parity_bit)
-
             self.validate_parity(b)
 
-            p_drive = self.calculate_parity_drive(len(self))
 
-            # Write block to disks
-            self.storage_driver.write(b, p_drive, file_name)
+
+        p_drive = self.calculate_parity_drive(len(self))
+        # Write block to disks
+        end_parity = cur_milli_time()
+        self.storage_driver.write(b, p_drive, file_name)
+        end_write = cur_milli_time()
+        logging.warning("File processed in {} seconds".format((end_parity - start_time)/1000))
+        logging.warning("File wrote in {} seconds".format((end_write - start_time)/1000))
+
         self.spin = False
         thread.join()
         logging.warning(' uploading blocks to storage')
-        print(file_name)
         self.storage_driver.upload_blocks(file_name)
 
         end_time = cur_milli_time()
-        logging.warning("File processed and uploaded in {} seconds".format(end_time - start_time) )
+        logging.warning("File uploaded in {} seconds".format((end_time - start_time)/1000))
 
     def spinner(self):
         spinner = itertools.cycle(['-', '/', '|', '\\'])
@@ -115,7 +117,7 @@ class RAID5:
                 try:
                     rebuild.write(''.join(char))
                 except UnicodeEncodeError:
-                    print('Unicode error found')
+                    logging.error('Unicode error found')
 
     def rebuild_img_file_test(self, data, file_name):
 
@@ -157,14 +159,14 @@ class RAID5:
             for i in data:
                 contents.append(chr(int(str(i), 2)))
         except ValueError:
-            print('Byte error found')
+            logging.error('Byte error found')
 
         with open(file_name + '_rebuild.txt', 'w') as rebuild:
             for char in contents:
                 try:
                     rebuild.write(''.join(char))
                 except UnicodeEncodeError:
-                    print('Unicode error found')
+                    logging.error('Unicode error found')
 
     def reconstruct_img_from_parity(self, data, file_name, corrupted_drive='_0'):  ##ToDO- potentially refactor into origional two functions as error case
         logging.warning('Rebuilding file from parity data')
@@ -186,7 +188,7 @@ class RAID5:
             for i in data:
                 contents.append(chr(int(str(i), 2)))
         except ValueError:
-            print('Byte error found')
+            logging.error('Byte error found')
 
         file_name = file_name + '_rebuild.jpg'
         file = self.from_bits(1, file_name, data)
@@ -198,7 +200,7 @@ class RAID5:
         ret_str = ""
         for x in b:
             ret_str += chr(int(x, 2))
-        return RAIDFile(file_id, file_name, ret_str, binary_data=0)
+        return RAIDFile(file_id, None, ret_str, binary_data=0, file_name=file_name)
 
 
     def calculate_parity_drive(self, index):

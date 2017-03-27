@@ -1,5 +1,6 @@
 ##Main Driver File
 import _csv
+import logging
 import os
 
 import driver.Dropbox.DropboxDriver as Dropbox
@@ -12,11 +13,11 @@ import driver.Box.BoxDriver as Box
 
 ##TODO - Deal with app looking for files from where main file was called
 class CloudRAID:
-
     dbx = Dropbox.DropboxDriver()
     google = Google.GoogleDriver()
     box = Box.BoxDriver()
     drivers = []
+
 
     def __init__(self):
         self.drivers.append(self.dbx)
@@ -28,12 +29,14 @@ class CloudRAID:
     def __len__(self):
         return len(self.drivers)
 
+
     def index_drives(self, p_drive):
         for i in range(len(self.drivers)):
             if i == p_drive:
                 self.drivers[i].index = '_p'
             else:
                 self.drivers[i].index = '_{0}'.format(i)
+
 
     def write(self, block, p_drive, file_name):
 
@@ -42,13 +45,13 @@ class CloudRAID:
 
         for i in range(len(block)):
             if i == p_drive:
-                name = f_name+'_p.csv'
+                name = f_name + '_p.csv'
                 with open(name, 'a', newline='') as csv:
                     writer = _csv.writer(csv, delimiter=',')
-                    b =  block[i]
+                    b = block[i]
                     writer.writerow([b])
             else:
-                name = f_name + '_' +str(i) + '.csv'
+                name = f_name + '_' + str(i) + '.csv'
                 with open(name, 'a', newline='') as csv:
                     writer = _csv.writer(csv, delimiter=',')
                     b = block[i]
@@ -57,25 +60,24 @@ class CloudRAID:
 
     def upload_blocks(self, file_name):
         f_name, ext = os.path.splitext(file_name)
+        payload = os.path.getsize(f_name + '_0.csv')
+        logging.warning("File Payload is {} kilobytes".format(payload / 1000))
+
         self.dbx.upload_file(f_name + '_0.csv')
         self.google.upload_file(f_name + '_1.csv')
         self.box.upload_file(f_name + '_p.csv')
         os.remove(f_name + '_0.csv')
-        os.remove(f_name +  '_1.csv')
-        os.remove(f_name +  '_p.csv')
-
-
-    def read(self):
-        pass
+        os.remove(f_name + '_1.csv')
+        os.remove(f_name + '_p.csv')
 
 
     def download_blocks(self, file_name):
         d1, d2, d3 = None, None, None
 
         try:
-            d1 = self.google.get_data(file_name+'.csv')
-            d2 = self.dbx.get_data(file_name+'.csv')
-            d3 = self.box.get_data(file_name+'.csv')
+            d1 = self.google.get_data(file_name + '.csv')
+            d2 = self.dbx.get_data(file_name + '.csv')
+            d3 = self.box.get_data(file_name + '.csv')
 
             return [d1, d2, d3]
 
@@ -85,14 +87,8 @@ class CloudRAID:
                 if x is None:
                     raise FileNotFoundError
 
-            ##ToDo - add retry queue
+                    ##ToDo - add retry queue
 
-
-
-
-
-    def reconstruct(self):
-        pass
 
     def remaining_storage(self):
 
@@ -107,7 +103,48 @@ class CloudRAID:
         return remaining
 
 
-    def upload(self, file_path): #depreciated - test uses only
+    def upload(self, file_path):  # depreciated - test uses only
         self.dbx.upload_file(file_path)
         self.google.upload_file(file_path)
         self.box.upload_file(file_path)
+
+
+    def check_connection(self):
+        """
+        checks the connections to all providers
+        1 - Google Drive
+        2 - Dropbox
+        3 - Box
+        :return: list of numbers corresponding to downed connections
+        empty list indicates all connections have been made
+        """
+        connections = [self.google.check_connection(), self.dbx.check_connection(), self.box.check_connection()]
+        print("Connections {}".format(connections))
+
+        if connections.count(True) == 3:
+            logging.warning('\nAll connections OK. System can be used for reads and writes.')
+            return []
+        elif connections.count(True) == 2:
+            logging.critical("\nOnly two connections available. System only usable for reads")
+            down = [i for i in enumerate(connections) if i == False ]
+            if 0 in down:
+                logging.critical("Cannot connect to Google.")
+            if 1 in down:
+                logging.critical("Cannot connect to Dropbox")
+            if 2 in down:
+                logging.critical("Cannot connect to Box")
+            return down
+        elif connections.count(True) < 2:
+            logging.critical("Sufficient connections could not be made. System unsuitable for reads or writes.")
+            down = [i for i in enumerate(connections) if i[1] == False]
+            for entry in down:
+                if 0 == entry[0]:
+                    down[0] += ('Google',)
+                    logging.critical("Cannot connect to Google.")
+                if 1 == entry[0]:
+                    down[1] += ('Dropbox',)
+                    logging.critical("Cannot connect to Dropbox")
+                if 2 == entry[0]:
+                    down[2] += ('Box',)
+                    logging.critical("Cannot connect to Box")
+            return down

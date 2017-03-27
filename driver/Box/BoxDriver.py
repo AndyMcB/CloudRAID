@@ -1,5 +1,5 @@
 import logging
-import os
+import os, requests
 from decimal import Decimal,getcontext
 from json import dump, load
 from os import path
@@ -25,6 +25,7 @@ class BoxDriver(RAIDStorage):
         self.access_token, self.refresh_token = self.retrieve_tokens()
         oauth2 = OAuth2(self.CLIENT_ID, self.CLIENT_SECRET, access_token= self.access_token, refresh_token= self.refresh_token, store_tokens=self.store_tokens)
         self.client = Client(oauth2)  # Create the SDK client
+        self.connected = self.check_connection()
         self.index = None
         #self.user_info(self.client)
 
@@ -96,6 +97,13 @@ class BoxDriver(RAIDStorage):
         raise FileNotFoundError(
             'File: ' + file_name + ' not found. If it was uploaded recently it may need to be indexed by Box')
 
+    def check_connection(self):
+        try:
+            self.client.user().get() #See if the user data can be retrieved
+            return True
+        except requests.exceptions.ConnectionError:
+            logging.critical("Connection could not be made to Box")
+            return False
 
 
     def remaining_storage(self):
@@ -109,30 +117,3 @@ class BoxDriver(RAIDStorage):
 
 
 
-class LoggingNetwork(DefaultNetwork):
-    def request(self, method, url, access_token, **kwargs):
-        """ Base class override. Pretty-prints outgoing requests and incoming responses. """
-        print('\x1b[36m{} {} {}\x1b[0m'.format(method, url, pformat(kwargs)))
-        response = super(LoggingNetwork, self).request(
-            method, url, access_token, **kwargs
-        )
-        if response.ok:
-            print('\x1b[32m{}\x1b[0m'.format(response.content))
-        else:
-            print('\x1b[31m{}\n{}\n{}\x1b[0m'.format(
-                response.status_code,
-                response.headers,
-                pformat(response.content),
-            ))
-        return response
-
-
-
-
-        ##Get new tokens
-        # try: #Try retrieve from token store and refresh
-        # token_dict = BoxOAuth2().oauth2_token_request(self.refresh_token)          ###Find way to detect if we need to refresh the tokens
-        # self.access_token = token_dict['access_token']
-        # self.refresh_token = token_dict['refresh_token']
-        # except BoxAuthenticationException:
-        # self.access_token, self.refresh_token = oauth2.authenticate(self.get_auth_code(oauth2))

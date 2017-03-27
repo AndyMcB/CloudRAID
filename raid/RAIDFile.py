@@ -11,7 +11,7 @@ class RAIDFile:
     file_name = ''
 
 
-    def __init__(self, file_id, file_metadata, data = None, binary_data = None, conn=None):
+    def __init__(self, file_id, file_metadata, data = None, binary_data = None, conn=None, **kwargs):
         if conn is not None:
             try:
                 logging.warning('Adding record to DB')
@@ -24,7 +24,10 @@ class RAIDFile:
 
         self.start_addr = file_id
         self.data = data  # data to binerize
-        self.file_name = file_metadata['full_name']
+        if 'file_name' in kwargs.keys():
+            self.file_name = kwargs.get('file_name')
+        else:
+            self.file_name = file_metadata['full_name']
         if binary_data is None:
             logging.warning('Binarizing Data')
             self.binary_data = self.convert(self.file_name, data)  # Binary version of string

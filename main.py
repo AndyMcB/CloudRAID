@@ -9,19 +9,25 @@ class Main:
 
     def program(self):
 
-        logging.warning(' Started')
-
         cur_milli_time = lambda: int(round(time.time() * 1000))
-
         start_time = cur_milli_time()
+
         try:
             file_name = sys.argv[1]
-        except:
-            file_name = 'testFiles/cats.jpg'
+        except: #todo refactor out into console inupt
+            file_name = 'testFiles/test.txt'
+
 
         conn = sqlite3.connect('file_cache.db', timeout=10)
         driver = DriverController.CloudRAID()
         raid = RAID5(driver)
+
+
+        response = driver.check_connection()
+        print(response)
+
+
+        RAIDFile.db_remove_file(conn, 'test.txt')
 
         with open(file_name, 'rb') as file:
             logging.warning("File: " + file_name)
@@ -60,5 +66,6 @@ class Main:
         logging.warning("Program completed in approximatly " + str(total_time / 1000) + ' seconds')
 
 if __name__ == "__main__":
+
     main = Main()
     main.program()
