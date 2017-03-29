@@ -65,7 +65,7 @@ class GoogleDriver(RAIDStorage):
 
         if not matches:
             logging.error('Google: No file found')
-            return (False, 'Google', self.index)
+            return ('Google', self.index)
         else:
             file = matches[0]
             data = file.GetContentString(mimetype='text/csv').replace('\r\n', '')

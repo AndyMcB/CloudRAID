@@ -1,4 +1,4 @@
-import os, sqlite3
+import os, sqlite3, pandas
 from tkinter import Tk
 from datetime import date
 from tkinter.filedialog import askopenfilename
@@ -64,36 +64,60 @@ class Main:
         f_name, ext = os.path.splitext(os.path.basename(file_name))
 
         data = self.driver.download_blocks(f_name)
-        data[2] = ('Google', '_p') #todo remove unnecessary falses from tuples
 
         unavailable = []
         for d in data:
             if isinstance(d, tuple):
                  unavailable.append(d)
 
-        data = [d for d in data if type(d) != tuple]
+        data = [d for d in data if type(d) != tuple] # Prune out actual data from
 
         if len(unavailable) > 1:
-            logging.critical('{} unavailable. File cannot be rebuilt.'.format(unavailable))
+            logging.critical('{} unavailable. File cannot be rebuilt.'
+                             '\n\tIf it was uploaded recently it may need to be indexed by your storage providers'.format(unavailable))
             return False
+
         elif len(unavailable) == 1:
-            logging.error('{} could not find data'.format(unavailable))
+            logging.error('Drive:{0}, {1} could not find data'.format(unavailable[0][1], unavailable[0][0]))
+            missing_drive = [i[1] for i in unavailable]
 
-        #todo remove tuples frrm data and send to relevent funations
-            if data != []:
-                logging.warning("Reconstructing file data")
-                if ext == '.jpg':
-                    self.raid.rebuild_img_file(data, f_name)
-                elif ext == '.txt':
-                    self.raid.rebuild_txt_file(data, f_name)
+            if len(missing_drive) > 0:
+                missing_drive = missing_drive[0]
+                if missing_drive == '_p':
+                    logging.warning("Reconstructing file data")
+                    if ext == '.jpg':
+                        self.raid.rebuild_img_file(data, f_name)
+                    elif ext == '.txt':
+                        self.raid.rebuild_txt_file(data, f_name)
+                    else:
+                        logging.error("File type not supported!")
+
+                    logging.warning('File Reconstructed!')
+
                 else:
-                    logging.error("File type not supported!")
+                    logging.warning("Reconstructing file data")
+                    if ext == '.jpg':
+                        self.raid.reconstruct_img_from_parity(data, f_name, missing_drive)
+                    elif ext == '.txt':
+                        self.raid.reconstruct_txt_from_parity(data, f_name, missing_drive)
+                    else:
+                        logging.error("File type not supported!")
 
-                logging.warning('File Reconstructed!')
+                    logging.warning('File Reconstructed!')
+
+        else:
+            logging.warning("Reconstructing file data")
+            if ext == '.jpg':
+                self.raid.rebuild_img_file(data, f_name)
+            elif ext == '.txt':
+                self.raid.rebuild_txt_file(data, f_name)
             else:
-                logging.error(
-                    "No Data to rebuild from. \n\tIf it was uploaded recently it may need to be indexed by your storage providers")
-                pass  # ToDo - implement task queue
+                logging.error("File type not supported!")
+
+            logging.warning('File Reconstructed!')
+           # ToDo - implement task queue
+
+
 
 
     def remove_file(self, file_name):
@@ -111,7 +135,13 @@ class Main:
 
 
     def print_uploaded_files(self):
-        pass  # todo add query to sqlite db
+        cur = self.conn.cursor()
+        cur.execute('SELECT * FROM files')
+        info = cur.fetchall()
+        headings = ['Full Name', 'Name', 'Extention', 'Size(B)', 'Date Uploaded']
+        print(pandas.DataFrame(info, columns=headings))
+        self.conn.commit()
+
 
 
     def get_metadata(self):
@@ -137,8 +167,8 @@ if __name__ == "__main__":
     while True:
         time.sleep(2)
         print(
-            "\nPlease enter a number: (1)upload (2)download (3)metadata "
-            "(4)exit (5)uploads \n\t\t\t\t\t   (6)downloads (7) Delete")
+            "\nPlease enter a number: \n(1)upload \n(2)download \n(3)metadata "
+            "\n(4)exit \n(5)uploads \n(6)downloads \n(7) Delete \n(8) Show available files")
 
         try:
             choice = int(input())
@@ -146,7 +176,7 @@ if __name__ == "__main__":
             choice = 100
 
         if choice == 1:
-            print("\nPlease input a file name from uploads folder")
+            print("\nPlease select a file")
             Tk().withdraw()  # we don't want a full GUI, so keep the root window from appearing
             file = askopenfilename(initialdir='uploads/')  # show an "Open" dialog box and return the path to the selected file
             file_name = os.path.basename(file)
@@ -173,6 +203,11 @@ if __name__ == "__main__":
             main.open_download_folder()
         elif choice == 7:
             print("\nPlease input a file name to delete")
+            choice = input()
+            main.remove_file(choice)
+        elif choice == 8:
+            print("\nUploaded file data:\n")
+            main.print_uploaded_files()
             choice = input()
             main.remove_file(choice)
         else:

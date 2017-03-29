@@ -53,7 +53,7 @@ class DropboxDriver(RAIDStorage):
             file, response = self.client.files_download(file_path)
         except dropbox.exceptions.ApiError:
             logging.warning('Dropbox: File not found')
-            return (False, 'Dropbox', self.index)
+            return ('Dropbox', self.index)
 
         data = response.content.decode('utf-8').replace('\r\n', '')
         data = [data[i:i + 10] for i in range(0, len(data), 10)]

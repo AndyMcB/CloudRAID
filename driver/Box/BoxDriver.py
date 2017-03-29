@@ -107,14 +107,13 @@ class BoxDriver(RAIDStorage):
         for item in search_results:
             if item.name == file_name:
                 item_with_name = item.get(fields=['name'])
-                print('matching item: ' + item_with_name.id + '-' + item_with_name.name + '\n' )
                 data = item_with_name.content().decode('utf-8').replace('\r\n', '')
                 data = [data[i:i + 10] for i in range(0, len(data), 10)]
 
                 return [item_with_name.name, data]
 
         logging.error('Box: File not found')
-        return (False, 'Box', self.index)
+        return ('Box', self.index)
 
     def check_connection(self):
         try:

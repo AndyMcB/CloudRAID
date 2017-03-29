@@ -138,11 +138,10 @@ class RAID5:
     def reconstruct_txt_from_parity(self, data, file_name, corrupted_drive ):  ##ToDO- potentially refactor into origional two functions as error case
         logging.warning('Rebuilding file from parity data')
         for name, bytes in data:
-            if corrupted_drive not in name:
-                if '_p' in name:
-                    p_bloc = bytes
-                else:
-                    d_bloc = bytes
+            if '_p' in name:
+                p_bloc = bytes
+            else:
+                d_bloc = bytes
 
         recov = []
         for b in zip(p_bloc, d_bloc):
@@ -170,11 +169,10 @@ class RAID5:
     def reconstruct_img_from_parity(self, data, file_name, corrupted_drive='_0'):  ##ToDO- potentially refactor into origional two functions as error case
         logging.warning('Rebuilding file from parity data')
         for name, bytes in data:
-            if corrupted_drive not in name:
-                if '_p' in name:
-                    p_bloc = bytes
-                else:
-                    d_bloc = bytes
+            if '_p' in name:
+                p_bloc = bytes
+            else:
+                d_bloc = bytes
 
         recov = []
         for b in zip(d_bloc, p_bloc):
