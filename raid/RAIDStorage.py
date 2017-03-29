@@ -30,3 +30,11 @@ class RAIDStorage:
     @abstractmethod
     def check_connection(self):
         pass
+
+    @abstractmethod
+    def get_data(self):
+        pass
+
+    @abstractmethod
+    def delete_data(self):
+        pass

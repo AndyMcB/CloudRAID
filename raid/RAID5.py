@@ -67,16 +67,13 @@ class RAID5:
             parity_bit = self.calculate_xor(b)
             b.append(parity_bit)
             self.validate_parity(b)
+            p_drive = self.calculate_parity_drive(len(self))
+            self.storage_driver.write(b, p_drive, file_name) #write to fle
 
 
-
-        p_drive = self.calculate_parity_drive(len(self))
-        # Write block to disks
-        end_parity = cur_milli_time()
-        self.storage_driver.write(b, p_drive, file_name)
-        end_write = cur_milli_time()
-        logging.warning("File processed in {} seconds".format((end_parity - start_time)/1000))
-        logging.warning("File wrote in {} seconds".format((end_write - start_time)/1000))
+        end = cur_milli_time()
+        logging.warning("File processed & wrote in {} seconds".format((end - start_time)/1000))
+        #logging.warning("File wrote in {} seconds".format((end_write - start_time)/1000))
 
         self.spin = False
         thread.join()
@@ -113,9 +110,11 @@ class RAID5:
             logging.error('Byte error found')
 
         with open('downloads/'+file_name + '_rebuild.txt', 'w') as rebuild:
+
             for char in contents:
                 try:
-                    rebuild.write(''.join(char))
+                    #rebuild.write(''.join(char))
+                    rebuild.write(char)
                 except UnicodeEncodeError:
                     logging.error('Unicode error found')
 

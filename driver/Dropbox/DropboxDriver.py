@@ -48,13 +48,30 @@ class DropboxDriver(RAIDStorage):
         file_name = name + self.index + extention
 
         file_path = "/FYP/{0}".format(file_name)
-        print(file_path)
-        file, response = self.client.files_download(file_path)
+
+        try:
+            file, response = self.client.files_download(file_path)
+        except dropbox.exceptions.ApiError:
+            logging.warning('Dropbox: File not found')
+            return (False, 'Dropbox', self.index)
 
         data = response.content.decode('utf-8').replace('\r\n', '')
         data = [data[i:i + 10] for i in range(0, len(data), 10)]
         return [file.name, data]
 
+    def delete_data(self, file_name):
+        name, extention = os.path.splitext(file_name)
+        file_name = name + self.index + '.csv'
+
+        file_path = "/FYP/{0}".format(file_name)
+
+        try:
+            self.client.files_delete(file_path)
+            logging.warning('Dropbox: File deleted')
+            return True
+        except (dropbox.exceptions.ApiError, dropbox.stone_validators.ValidationError):
+            logging.error("Dropbox: File not found")
+            return False
 
 
     def get_access_token(self):

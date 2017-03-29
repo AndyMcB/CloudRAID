@@ -64,7 +64,8 @@ class GoogleDriver(RAIDStorage):
         matches = [i for i in file_list if i['title'] == file_name]
 
         if not matches:
-            raise Exception("No file found")
+            logging.error('Google: No file found')
+            return (False, 'Google', self.index)
         else:
             file = matches[0]
             data = file.GetContentString(mimetype='text/csv').replace('\r\n', '')
@@ -73,11 +74,26 @@ class GoogleDriver(RAIDStorage):
 
         return matches[0]
 
-        #  for file in file_list:
-        #     if file['title'] == file_name:
-        #         data = file.GetContentString(mimetype='text/csv').replace('\r\n', '')
-        #         data = [data[i:i + 10] for i in range(0, len(data), 10)]
-        #         return [file['title'], data]
+    def delete_data(self, file_name):
+        name, extention = os.path.splitext(file_name)
+        file_name = name + self.index + '.csv'
+        file_list = self.client.ListFile(
+            {'q': "'0B3YfnXuRdcz4SXIyaXc2Z0xNQUE' in parents and trashed=false"}).GetList()
+
+        matches = [i for i in file_list if i['title'] == file_name]
+
+        if not matches:
+            logging.error("Google: No file found")
+        else:
+            try:
+                file = matches[0]
+                file.Delete()
+                logging.warning("Google: File deleted")
+                return True
+            except:
+                logging.error("Google: File could not be deleted")
+                return False
+
 
 
     def remaining_storage(self):

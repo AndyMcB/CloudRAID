@@ -88,6 +88,30 @@ class CloudRAID:
                     raise FileNotFoundError
 
                     ##ToDo - add retry queue
+    def delete(self, file_name):
+        d1 = self.google.delete_data(file_name)
+        d2 = self.dbx.delete_data(file_name)
+        d3 = self.box.delete_data(file_name)
+        returns = [d1, d2, d3]
+
+        if returns.count(True) == 3:
+            logging.warning('File deleted from all providers')
+            return []
+        elif returns.count(True) < 2:
+            logging.critical("File could not be deleted from all providers. \n\t It may have been deleted previously")
+            down = [i for i in enumerate(returns) if i[1] is False]
+            for entry in down:
+                if 'Google' in entry:
+                    down[0] += ('Google',)
+                    logging.critical("Cannot delete from Google.")
+                if 'Dropbox' in entry:
+                    down[1] += ('Dropbox',)
+                    logging.critical("Cannot delete from Dropbox")
+                if Box in entry:
+                    down[2] += ('Box',)
+                    logging.critical("Cannot delete from Box")
+            return down
+
 
 
     def remaining_storage(self):
