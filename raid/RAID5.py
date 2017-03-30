@@ -35,6 +35,10 @@ class RAID5:
         self.storage_driver.index_drives(p_drive)
 
     def write_file(self, file, file_name):  # create internal representation of file and send bit too write
+
+        cur_milli_time = lambda: int(round(time.time() * 1000))
+        start = cur_milli_time()
+
         if len(self.files) == 0:
             file.start_addr = 0
         else:
@@ -45,10 +49,20 @@ class RAID5:
         logging.warning(" splitting data...")
 
         blocks = list(RAID5.split_data(file.binary_data, len(self.storage_driver) - 1))  # minus one drive to account for parity drive
+        if len(blocks) == 0:
+            raise Exception('File has no content')
+
         file.padding = (len(self.storage_driver) - 1) - len(blocks[-1])  # calculate padding with
 
         self.write_bits(file.binary_data + [format(0, bin_format)] * file.padding,
                         file_name)  # write the binary data + the necessary 0 padding
+
+        end = cur_milli_time()
+
+        logging.warning("File uploaded in {} seconds".format((end - start)/1000))
+        return end-start
+
+
 
     def write_bits(self, data, file_name):  # get data and split into blocks, calculate parity bit, insert and write
 
@@ -56,8 +70,7 @@ class RAID5:
 
 
         logging.warning(" calculating parity and generating bit load")
-        cur_milli_time = lambda: int(round(time.time() * 1000))
-        start_time = cur_milli_time()
+
 
         thread = Thread(target=self.spinner, )
         self.spin = True
@@ -70,18 +83,11 @@ class RAID5:
             p_drive = self.calculate_parity_drive(len(self))
             self.storage_driver.write(b, p_drive, file_name) #write to fle
 
-
-        end = cur_milli_time()
-        logging.warning("File processed & wrote in {} seconds".format((end - start_time)/1000))
-        #logging.warning("File wrote in {} seconds".format((end_write - start_time)/1000))
-
         self.spin = False
         thread.join()
         logging.warning(' uploading blocks to storage')
         self.storage_driver.upload_blocks(file_name)
 
-        end_time = cur_milli_time()
-        logging.warning("File uploaded in {} seconds".format((end_time - start_time)/1000))
 
     def spinner(self):
         spinner = itertools.cycle(['-', '/', '|', '\\'])

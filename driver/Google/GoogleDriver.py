@@ -36,7 +36,7 @@ class GoogleDriver(RAIDStorage):
                 gauth.Authorize()
                 self.connected = True
         except httplib2.ServerNotFoundError:
-            logging.critical('Connection could not be made to Google Drive')
+            #logging.critical('Connection could not be made to Google Drive')
             self.connected = False
 
         gauth.SaveCredentialsFile("credentials.json")

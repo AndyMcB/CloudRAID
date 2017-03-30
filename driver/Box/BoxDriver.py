@@ -120,7 +120,7 @@ class BoxDriver(RAIDStorage):
             self.client.user().get() #See if the user data can be retrieved
             return True
         except requests.exceptions.ConnectionError:
-            logging.critical("Connection could not be made to Box")
+            #logging.critical("Connection could not be made to Box")
             return False
 
 

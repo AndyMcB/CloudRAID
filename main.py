@@ -1,4 +1,5 @@
 import os, sqlite3, pandas
+from threading import Timer
 from tkinter import Tk
 from datetime import date
 from tkinter.filedialog import askopenfilename
@@ -16,16 +17,15 @@ class Main:
     raid = RAID5(driver)
     down_storage = driver.check_connection()  # Contains details about any downed providers
 
-
     def __init__(self):
-        RAIDFile.db_remove_file(self.conn, 'test.txt')  # testing
+        pass
 
 
     def upload(self, file_name):
         if len(self.down_storage) > 1:
             logging.error(
                 "Write abilitied disabled. Insufficient storage providers.\n Check your provider is up and try again")
-            return
+            return False
         try:
             with open(file_name, 'rb') as file:
                 logging.warning("File: " + file_name)
@@ -44,11 +44,19 @@ class Main:
                 if repr(file) != "''":
                     logging.warning("File successfully RAIDED")
                 else:
-                    raise Exception('File could not be raided')
-                    return
+                    logging.error('File could not be raided')
+                    return None
 
                 logging.warning("Writing file to storage")
-                self.raid.write_file(file, file.file_name)
+
+                try:
+                    time = self.raid.write_file(file, file.file_name)
+                    self.conn.execute('INSERT INTO upload_information (name, upload_time, date_uploaded) VALUES (?, ?, ?)',
+                                 (file_metadata['full_name'], time, date.today()))
+                    self.conn.commit()
+                except Exception:
+                    logging.error('File has no contents')
+
         except FileNotFoundError:
             logging.error("File not found.")
 
@@ -130,8 +138,7 @@ class Main:
         if len(status) != 0:
             for status in status:
                 logging.critical("Provider Down: {}".format(status[2]))
-        else:
-            logging.warning("All providers up")
+
 
 
     def print_uploaded_files(self):
@@ -145,8 +152,16 @@ class Main:
 
 
     def get_metadata(self):
-        pass
+        remaining = self.driver.remaining_storage()
+        print(remaining)
 
+        cur = self.conn.cursor()
+        cur.execute('Select * FROM upload_information')
+        res = cur.fetchall()
+
+        print('\nShowing last 10 uploads:')
+        headings = ['File Name','Upload Time(ms)','Date Uploaded', '']
+        print(pandas.DataFrame(res, columns=headings))
 
     def open_upload_folder(self):
         call(["explorer", ".\\uploads\\"])
@@ -166,9 +181,10 @@ if __name__ == "__main__":
 
     while True:
         time.sleep(2)
-        print(
-            "\nPlease enter a number: \n(1)upload \n(2)download \n(3)metadata "
-            "\n(4)exit \n(5)uploads \n(6)downloads \n(7) Delete \n(8) Show available files")
+        options = [['Upload File (1)', 'Download File (2)'], ['Show Metadata (3)', 'Exit Session (4)'], ['Open uploads (5)',
+                   'Open downloads (6)'], ['Delete File (7)', 'Show Available Files (8)']]
+        print('____________________________________________________________________________\nEnter number from list below:')
+        print(pandas.DataFrame(options, columns= ['','']))
 
         try:
             choice = int(input())
@@ -189,7 +205,7 @@ if __name__ == "__main__":
 
         elif choice == 3:
             print("\nPrinting metadata")
-            print(main.get_metadata())
+            main.get_metadata()
 
         elif choice == 4:
             main.exit()
@@ -201,19 +217,24 @@ if __name__ == "__main__":
         elif choice == 6:
             print("\nOpening Download Folder")
             main.open_download_folder()
+
         elif choice == 7:
             print("\nPlease input a file name to delete")
             choice = input()
             main.remove_file(choice)
+
         elif choice == 8:
             print("\nUploaded file data:\n")
             main.print_uploaded_files()
-            choice = input()
-            main.remove_file(choice)
         else:
             print("Invalid input, please try agian")
 
-            ##ToDo improve conections[T,T,T] dialog
+        main.check_connections()
+
             ##todo error when downloading  name with case mismatch
-            ##ToDo thread a task that checks the internet status
-            ##ToDo - build thread that will check connection status every minute or so
+
+# WARNING:root:File Payload is 3687.552 kilobytes
+# WARNING:root:File uploaded to Dropbox
+# WARNING:root:File Uploaded to Google
+# WARNING:root:File Uploaded to Box
+# WARNING:root:File uploaded in 4728.476 seconds

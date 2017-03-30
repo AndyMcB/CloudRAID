@@ -3,6 +3,9 @@ import _csv
 import logging
 import os
 
+import httplib2
+import requests
+
 import driver.Dropbox.DropboxDriver as Dropbox
 import driver.Google.GoogleDriver as Google
 
@@ -117,14 +120,27 @@ class CloudRAID:
     def remaining_storage(self):
 
         remaining = []
-        d_storage = self.dbx.remaining_storage()
-        g_storage = self.google.remaining_storage()
-        b_storage = self.box.remaining_storage()
+        try:
+            d_storage = str(self.dbx.remaining_storage())+' GB', 'Dropbox'
+        except requests.exceptions.ConnectionError:
+            d_storage = 'Dropbox Unavailable'
+
+        try:
+            g_storage = str(self.google.remaining_storage())+' GB', 'Google'
+        except httplib2.ServerNotFoundError:
+            g_storage = 'Google Unavailable'
+        try:
+            b_storage = str(self.box.remaining_storage())+' GB', 'Box'
+        except requests.exceptions.ConnectionError:
+           b_storage = 'Box Unavailable'
 
         remaining.append(d_storage)
         remaining.append(g_storage)
         remaining.append(b_storage)
         return remaining
+
+
+
 
 
     def upload(self, file_path):  # depreciated - test uses only
@@ -143,20 +159,22 @@ class CloudRAID:
         empty list indicates all connections have been made
         """
         connections = [self.google.check_connection(), self.dbx.check_connection(), self.box.check_connection()]
-        print("Connections {}".format(connections))
 
         if connections.count(True) == 3:
-            logging.warning('\nAll connections OK. System can be used for reads and writes.')
+            logging.warning(' All connections OK. System can be used for reads and writes.')
             return []
         elif connections.count(True) == 2:
             logging.critical("\nOnly two connections available. System only usable for reads")
             down = [i for i in enumerate(connections) if i == False ]
             if 0 in down:
-                logging.critical("Cannot connect to Google.")
+                pass
+                #logging.critical("Cannot connect to Google.")
             if 1 in down:
-                logging.critical("Cannot connect to Dropbox")
+                pass
+                #logging.critical("Cannot connect to Dropbox")
             if 2 in down:
-                logging.critical("Cannot connect to Box")
+                pass
+                #logging.critical("Cannot connect to Box")
             return down
         elif connections.count(True) < 2:
             logging.critical("Sufficient connections could not be made. System unsuitable for reads or writes.")
@@ -164,11 +182,11 @@ class CloudRAID:
             for entry in down:
                 if 0 == entry[0]:
                     down[0] += ('Google',)
-                    logging.critical("Cannot connect to Google.")
+                    #logging.critical("Cannot connect to Google.")
                 if 1 == entry[0]:
                     down[1] += ('Dropbox',)
-                    logging.critical("Cannot connect to Dropbox")
+                    #logging.critical("Cannot connect to Dropbox")
                 if 2 == entry[0]:
                     down[2] += ('Box',)
-                    logging.critical("Cannot connect to Box")
+                    #logging.critical("Cannot connect to Box")
             return down

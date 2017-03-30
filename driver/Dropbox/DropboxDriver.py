@@ -112,5 +112,5 @@ class DropboxDriver(RAIDStorage):
             self.client.users_get_current_account()  # test for connection ToDo improve
             return True
         except requests.exceptions.ConnectionError:
-            logging.critical("Connection could not be made to Dropbox")
+            #logging.critical("Connection could not be made to Dropbox")
             return False
