@@ -174,7 +174,7 @@ class CloudRAID:
                 #logging.critical("Cannot connect to Dropbox")
             if 2 in down:
                 pass
-                #logging.critical("Cannot connect to Box")
+                ##logging.critical("Cannot connect to Box")
             return down
         elif connections.count(True) < 2:
             logging.critical("Sufficient connections could not be made. System unsuitable for reads or writes.")
