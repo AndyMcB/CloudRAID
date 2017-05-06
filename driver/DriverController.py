@@ -179,7 +179,7 @@ class CloudRAID:
         elif connections.count(True) < 2:
             logging.critical("Sufficient connections could not be made. System unsuitable for reads or writes.")
             down = [i for i in enumerate(connections) if i[1] == False]
-            for entry in down:
+        for entry in down:
                 if 0 == entry[0]:
                     down[0] += ('Google',)
                     #logging.critical("Cannot connect to Google.")
@@ -189,4 +189,4 @@ class CloudRAID:
                 if 2 == entry[0]:
                     down[2] += ('Box',)
                     #logging.critical("Cannot connect to Box")
-            return down
+        return down

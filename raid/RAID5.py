@@ -48,6 +48,7 @@ class RAID5:
 
         logging.warning(" splitting data...")
 
+
         blocks = list(RAID5.split_data(file.binary_data, len(self.storage_driver) - 1))  # minus one drive to account for parity drive
         if len(blocks) == 0:
             raise Exception('File has no content')

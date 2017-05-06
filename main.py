@@ -231,10 +231,4 @@ if __name__ == "__main__":
 
         main.check_connections()
 
-            ##todo error when downloading  name with case mismatch
 
-# WARNING:root:File Payload is 3687.552 kilobytes
-# WARNING:root:File uploaded to Dropbox
-# WARNING:root:File Uploaded to Google
-# WARNING:root:File Uploaded to Box
-# WARNING:root:File uploaded in 4728.476 seconds
