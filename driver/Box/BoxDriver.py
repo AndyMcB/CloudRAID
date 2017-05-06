@@ -1,5 +1,5 @@
 import logging
-import os
+import os, requests
 from decimal import Decimal,getcontext
 from json import dump, load
 from os import path
@@ -25,6 +25,7 @@ class BoxDriver(RAIDStorage):
         self.access_token, self.refresh_token = self.retrieve_tokens()
         oauth2 = OAuth2(self.CLIENT_ID, self.CLIENT_SECRET, access_token= self.access_token, refresh_token= self.refresh_token, store_tokens=self.store_tokens)
         self.client = Client(oauth2)  # Create the SDK client
+        self.connected = self.check_connection()
         self.index = None
         #self.user_info(self.client)
 
@@ -73,6 +74,24 @@ class BoxDriver(RAIDStorage):
         except exception.BoxAPIException:
             logging.error('Box: Filename in use')
 
+    def delete_data(self, file_path):
+        name, ext = os.path.splitext(path.basename(file_path))
+        file_name = name + self.index + '.csv'
+        try:
+            items = self.client.folder(self.FOLDER_ID).get_items(limit=5)
+            for file in items:
+                if file.name == file_name:
+                    file.delete()
+                    logging.warning("Box: File deleted")
+                    return True
+
+            logging.warning("Box: File Not Found")
+            return False
+        except exception.BoxAPIException:
+            logging.error('Box: File not found')
+            return False
+
+
     def get_data(self,file_name):
         name, extention = os.path.splitext(file_name)
         file_name = name + self.index + extention
@@ -88,14 +107,21 @@ class BoxDriver(RAIDStorage):
         for item in search_results:
             if item.name == file_name:
                 item_with_name = item.get(fields=['name'])
-                print('matching item: ' + item_with_name.id + '-' + item_with_name.name + '\n' )
                 data = item_with_name.content().decode('utf-8').replace('\r\n', '')
                 data = [data[i:i + 10] for i in range(0, len(data), 10)]
+
                 return [item_with_name.name, data]
 
-        raise FileNotFoundError(
-            'File: ' + file_name + ' not found. If it was uploaded recently it may need to be indexed by Box')
+        logging.error('Box: File not found')
+        return ('Box', self.index)
 
+    def check_connection(self):
+        try:
+            self.client.user().get() #See if the user data can be retrieved
+            return True
+        except requests.exceptions.ConnectionError:
+            #logging.critical("Connection could not be made to Box")
+            return False
 
 
     def remaining_storage(self):
@@ -109,30 +135,3 @@ class BoxDriver(RAIDStorage):
 
 
 
-class LoggingNetwork(DefaultNetwork):
-    def request(self, method, url, access_token, **kwargs):
-        """ Base class override. Pretty-prints outgoing requests and incoming responses. """
-        print('\x1b[36m{} {} {}\x1b[0m'.format(method, url, pformat(kwargs)))
-        response = super(LoggingNetwork, self).request(
-            method, url, access_token, **kwargs
-        )
-        if response.ok:
-            print('\x1b[32m{}\x1b[0m'.format(response.content))
-        else:
-            print('\x1b[31m{}\n{}\n{}\x1b[0m'.format(
-                response.status_code,
-                response.headers,
-                pformat(response.content),
-            ))
-        return response
-
-
-
-
-        ##Get new tokens
-        # try: #Try retrieve from token store and refresh
-        # token_dict = BoxOAuth2().oauth2_token_request(self.refresh_token)          ###Find way to detect if we need to refresh the tokens
-        # self.access_token = token_dict['access_token']
-        # self.refresh_token = token_dict['refresh_token']
-        # except BoxAuthenticationException:
-        # self.access_token, self.refresh_token = oauth2.authenticate(self.get_auth_code(oauth2))

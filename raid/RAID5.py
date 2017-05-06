@@ -35,6 +35,10 @@ class RAID5:
         self.storage_driver.index_drives(p_drive)
 
     def write_file(self, file, file_name):  # create internal representation of file and send bit too write
+
+        cur_milli_time = lambda: int(round(time.time() * 1000))
+        start = cur_milli_time()
+
         if len(self.files) == 0:
             file.start_addr = 0
         else:
@@ -44,45 +48,47 @@ class RAID5:
 
         logging.warning(" splitting data...")
 
+
         blocks = list(RAID5.split_data(file.binary_data, len(self.storage_driver) - 1))  # minus one drive to account for parity drive
+        if len(blocks) == 0:
+            raise Exception('File has no content')
+
         file.padding = (len(self.storage_driver) - 1) - len(blocks[-1])  # calculate padding with
 
         self.write_bits(file.binary_data + [format(0, bin_format)] * file.padding,
                         file_name)  # write the binary data + the necessary 0 padding
 
+        end = cur_milli_time()
+
+        logging.warning("File uploaded in {} seconds".format((end - start)/1000))
+        return end-start
+
+
+
     def write_bits(self, data, file_name):  # get data and split into blocks, calculate parity bit, insert and write
 
         blocks = RAID5.split_data(data, len(self.storage_driver) - 1)  # minus one drive to account for parity drive
-        bloc = []
+
 
         logging.warning(" calculating parity and generating bit load")
-        cur_milli_time = lambda: int(round(time.time() * 1000))
-        start_time = cur_milli_time()
+
 
         thread = Thread(target=self.spinner, )
         self.spin = True
         thread.start()
         for b in blocks:
-            bloc.append(b)
             # Calculate parity bit for block b & validate
-
             parity_bit = self.calculate_xor(b)
             b.append(parity_bit)
-
             self.validate_parity(b)
-
             p_drive = self.calculate_parity_drive(len(self))
+            self.storage_driver.write(b, p_drive, file_name) #write to fle
 
-            # Write block to disks
-            self.storage_driver.write(b, p_drive, file_name)
         self.spin = False
         thread.join()
         logging.warning(' uploading blocks to storage')
-        print(file_name)
         self.storage_driver.upload_blocks(file_name)
 
-        end_time = cur_milli_time()
-        logging.warning("File processed and uploaded in {} seconds".format(end_time - start_time) )
 
     def spinner(self):
         spinner = itertools.cycle(['-', '/', '|', '\\'])
@@ -92,7 +98,7 @@ class RAID5:
             time.sleep(0.1)
             sys.stdout.write('\r')
 
-    def rebuild_txt_file_test(self, data, file_name):
+    def rebuild_txt_file(self, data, file_name):
 
         for name, bytes in data:  # ToDo - improve extensibility
             if '_p' not in name:
@@ -110,14 +116,16 @@ class RAID5:
         except ValueError:
             logging.error('Byte error found')
 
-        with open(file_name + '_rebuild.txt', 'w') as rebuild:
+        with open('downloads/'+file_name + '_rebuild.txt', 'w') as rebuild:
+
             for char in contents:
                 try:
-                    rebuild.write(''.join(char))
+                    #rebuild.write(''.join(char))
+                    rebuild.write(char)
                 except UnicodeEncodeError:
-                    print('Unicode error found')
+                    logging.error('Unicode error found')
 
-    def rebuild_img_file_test(self, data, file_name):
+    def rebuild_img_file(self, data, file_name):
 
         for name, bytes in data:  # ToDo - improve extensibility
             if '_p' not in name:
@@ -130,18 +138,17 @@ class RAID5:
         file = self.from_bits(1, file_name, data)
 
         file_name = file_name + '_rebuild.jpg'
-        with open(file_name, 'wb') as f: #ToDo - fix hardcoded name
+        with open('downloads/'+file_name, 'wb') as f: #ToDo - fix hardcoded name
             d = base64.b64decode(file.data)
             f.write(d)
 
     def reconstruct_txt_from_parity(self, data, file_name, corrupted_drive ):  ##ToDO- potentially refactor into origional two functions as error case
         logging.warning('Rebuilding file from parity data')
         for name, bytes in data:
-            if corrupted_drive not in name:
-                if '_p' in name:
-                    p_bloc = bytes
-                else:
-                    d_bloc = bytes
+            if '_p' in name:
+                p_bloc = bytes
+            else:
+                d_bloc = bytes
 
         recov = []
         for b in zip(p_bloc, d_bloc):
@@ -157,23 +164,22 @@ class RAID5:
             for i in data:
                 contents.append(chr(int(str(i), 2)))
         except ValueError:
-            print('Byte error found')
+            logging.error('Byte error found')
 
-        with open(file_name + '_rebuild.txt', 'w') as rebuild:
+        with open('downloads/'+file_name + '_rebuild.txt', 'w') as rebuild:
             for char in contents:
                 try:
                     rebuild.write(''.join(char))
                 except UnicodeEncodeError:
-                    print('Unicode error found')
+                    logging.error('Unicode error found')
 
     def reconstruct_img_from_parity(self, data, file_name, corrupted_drive='_0'):  ##ToDO- potentially refactor into origional two functions as error case
         logging.warning('Rebuilding file from parity data')
         for name, bytes in data:
-            if corrupted_drive not in name:
-                if '_p' in name:
-                    p_bloc = bytes
-                else:
-                    d_bloc = bytes
+            if '_p' in name:
+                p_bloc = bytes
+            else:
+                d_bloc = bytes
 
         recov = []
         for b in zip(d_bloc, p_bloc):
@@ -186,11 +192,11 @@ class RAID5:
             for i in data:
                 contents.append(chr(int(str(i), 2)))
         except ValueError:
-            print('Byte error found')
+            logging.error('Byte error found')
 
         file_name = file_name + '_rebuild.jpg'
         file = self.from_bits(1, file_name, data)
-        with open(file_name, 'wb') as f:  # ToDo - fix hardcoded name
+        with open('downloads/'+file_name, 'wb') as f:  # ToDo - fix hardcoded name
             d = base64.b64decode(file.data)
             f.write(d)
 
@@ -198,7 +204,7 @@ class RAID5:
         ret_str = ""
         for x in b:
             ret_str += chr(int(x, 2))
-        return RAIDFile(file_id, file_name, ret_str, binary_data=0)
+        return RAIDFile(file_id, None, ret_str, binary_data=0, file_name=file_name)
 
 
     def calculate_parity_drive(self, index):

@@ -7,7 +7,7 @@ class RAIDStorage:
         self.storage_id = storage_id
         self.capacity = capacity
         self.data = []
-        print(storage_id, capacity)
+
 
     def __repr__(self): ##ToDo - fix descriptor
         return repr(self.storage_id) + ":" + repr(self.data)
@@ -26,3 +26,15 @@ class RAIDStorage:
     @abstractmethod
     def remaining_storage(self):
         return
+
+    @abstractmethod
+    def check_connection(self):
+        pass
+
+    @abstractmethod
+    def get_data(self):
+        pass
+
+    @abstractmethod
+    def delete_data(self):
+        pass

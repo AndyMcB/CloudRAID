@@ -22,11 +22,13 @@ class DropboxDriver(RAIDStorage):
             self.access_token = self.retrieve_tokens()
             self.client = dropbox.Dropbox(self.access_token)  # Dropbox Client Object
             self.index = None
+            self.connected = self.check_connection()
         except:
             self.access_token, uid = self.get_access_token()
             self.store_tokens(self.access_token)
             self.client = dropbox.Dropbox(self.access_token)  # Dropbox Client Object
             self.index = None
+
 
 
     def upload_file(self, file_path):
@@ -46,13 +48,30 @@ class DropboxDriver(RAIDStorage):
         file_name = name + self.index + extention
 
         file_path = "/FYP/{0}".format(file_name)
-        print(file_path)
-        file, response = self.client.files_download(file_path)
+
+        try:
+            file, response = self.client.files_download(file_path)
+        except dropbox.exceptions.ApiError:
+            logging.warning('Dropbox: File not found')
+            return ('Dropbox', self.index)
 
         data = response.content.decode('utf-8').replace('\r\n', '')
         data = [data[i:i + 10] for i in range(0, len(data), 10)]
         return [file.name, data]
 
+    def delete_data(self, file_name):
+        name, extention = os.path.splitext(file_name)
+        file_name = name + self.index + '.csv'
+
+        file_path = "/FYP/{0}".format(file_name)
+
+        try:
+            self.client.files_delete(file_path)
+            logging.warning('Dropbox: File deleted')
+            return True
+        except (dropbox.exceptions.ApiError, dropbox.stone_validators.ValidationError):
+            logging.error("Dropbox: File not found")
+            return False
 
 
     def get_access_token(self):
@@ -86,3 +105,12 @@ class DropboxDriver(RAIDStorage):
         getcontext().prec = 3
         gb_val = Decimal(remaining_bytes) / Decimal(1073741824)
         return gb_val
+
+
+    def check_connection(self):
+        try:
+            self.client.users_get_current_account()  # test for connection ToDo improve
+            return True
+        except requests.exceptions.ConnectionError:
+            #logging.critical("Connection could not be made to Dropbox")
+            return False
